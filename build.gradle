@@ -14,7 +14,7 @@ apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
 
-version = "${mod_version}-${mc_version}"
+version = "${mc_version}-${mod_version}"
 group = "com.tfar.${modid}" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = "${modid}"
 
@@ -45,10 +45,15 @@ minecraft {
             property 'forge.logging.console.level', 'debug'
 
             mods {
-                examplemod {
+                meandering {
                     source sourceSets.main
                 }
             }
+        }
+
+        client2 {
+            parent runs.client
+            args '--username', 'Dev2'
         }
 
         server {
@@ -62,7 +67,7 @@ minecraft {
             property 'forge.logging.console.level', 'debug'
 
             mods {
-                examplemod {
+                meandering {
                     source sourceSets.main
                 }
             }
@@ -74,9 +79,9 @@ minecraft {
             properties 'mixin.env.remapRefMap': 'true'
             property 'mixin.env.refMapRemappingFile', "${project.projectDir}/build/createSrgToMcp/output.srg"
             property 'forge.logging.console.level', 'debug'
-            args '--mod', 'examplemod', '--all', '--output', file('src/generated/resources/'), '--existing', sourceSets.main.resources.srcDirs[0]
+            args '--mod', 'meandering', '--all', '--output', file('src/generated/resources/'), '--existing', sourceSets.main.resources.srcDirs[0]
             mods {
-                examplemod {
+                meandering {
                     source sourceSets.main
                 }
             }
@@ -96,7 +101,6 @@ repositories{
         name = "ModMaven"
         url = "https://modmaven.dev/"
     }
-    jcenter()
     mavenCentral()
 
 }
@@ -136,11 +140,11 @@ jar {
     manifest {
         attributes([
                 "Specification-Title": "${modid}",
-                "Specification-Vendor": "examplemodsareus",
+                "Specification-Vendor": "meanderingsareus",
                 "Specification-Version": "1", // We are version 1 of ourselves
                 "Implementation-Title": project.name,
                 "Implementation-Version": "${version}",
-                "Implementation-Vendor" :"examplemodsareus",
+                "Implementation-Vendor" :"meanderingsareus",
                 "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
                 "MixinConfigs": "${modid}.mixins.json"
         ])
