@@ -6,6 +6,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.EquipmentSlotType;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.EntityPredicates;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
@@ -30,6 +31,7 @@ import net.minecraftforge.registries.DataSerializerEntry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tfar.meandering.client.MeanderingClient;
+import tfar.meandering.mixin.EntityPredicatesAccess;
 import tfar.meandering.mixin.GoalSelectorAccess;
 import tfar.meandering.mixin.LookAtGoalAccess;
 import tfar.meandering.mixin.NearestAttackableTargetGoalAccess;
@@ -39,6 +41,7 @@ import tfar.meandering.world.MSavedData;
 
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod(Meandering.MODID)
@@ -71,7 +74,6 @@ public class Meandering {
         bus.addGenericListener(EntityType.class, this::entities);
         MinecraftForge.EVENT_BUS.addListener(this::death);
         MinecraftForge.EVENT_BUS.addListener(this::spawn);
-        MinecraftForge.EVENT_BUS.addListener(this::target);
         MinecraftForge.EVENT_BUS.addListener(this::placeBlock);
         MinecraftForge.EVENT_BUS.addListener(this::serverStart);
         MinecraftForge.EVENT_BUS.addListener(this::login);
@@ -102,6 +104,22 @@ public class Meandering {
 
     private void setup(final FMLCommonSetupEvent event) {
         PacketHandler.registerMessages();
+
+        Predicate<Entity> canAiTarget = EntityPredicates.CAN_AI_TARGET;
+
+        Predicate<Entity> newCanAiTarget = entity -> canAiTarget.test(entity) && !isMeandering(entity);
+
+        EntityPredicatesAccess.setCAN_AI_TARGET(newCanAiTarget);
+
+        Predicate<Entity> canHAiTarget = EntityPredicates.CAN_HOSTILE_AI_TARGET;
+
+        Predicate<Entity> newCanHAiTarget = entity -> {
+            boolean b = canHAiTarget.test(entity) && !isMeandering(entity);
+            return b;
+        };
+
+        EntityPredicatesAccess.setCAN_HOSTILE_AI_TARGET(newCanHAiTarget);
+
     }
 
     public static void handle(ServerPlayerEntity player) {
@@ -112,23 +130,6 @@ public class Meandering {
             INSTANCE.data.disable(player);
         } else {
             INSTANCE.data.enable(player);
-        }
-    }
-
-    private void target(LivingSetAttackTargetEvent e) {
-        MobEntity mob = (MobEntity) e.getEntityLiving();
-        if (e.getTarget() instanceof PlayerEntity) {
-            PlayerEntity player = (PlayerEntity) e.getTarget();
-            if (meanderingSideSafe(player)) {//do not attack meandering players
-
-                Entity dummy = data.getDummy((ServerPlayerEntity) player);
-
-                if (dummy != null) {
-                    mob.setAttackTarget((LivingEntity) dummy);
-                } else {
-                    mob.setAttackTarget(null);
-                }
-            }
         }
     }
 
@@ -224,6 +225,10 @@ public class Meandering {
                 }
             }
         }
+    }
+
+    public static boolean isMeandering(Entity entity) {
+        return entity instanceof PlayerEntity && meanderingSideSafe((PlayerEntity) entity);
     }
 
     public static boolean meanderingSideSafe(PlayerEntity player) {

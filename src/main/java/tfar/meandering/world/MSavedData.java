@@ -127,7 +127,13 @@ public class MSavedData extends WorldSavedData {
             UUID pUUID = entry.getKey();
 
             if (pUUID.equals(player.getGameProfile().getId())) {
-                PacketHandler.sendToClient(new S2CMeanderingPacket(true),player);
+                PacketHandler.sendToClient(new S2CMeanderingPacket(true,entry.getValue().getSecond()),player);
+
+                player.abilities.allowFlying = true;
+                player.abilities.isFlying = true;
+                player.setOnGround(false);
+
+                player.sendPlayerAbilities();
             } else {
                 PacketHandler.sendToClient(new S2COtherMeanderingPacket(true,entry.getKey()),player);
             }

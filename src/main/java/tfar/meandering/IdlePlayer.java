@@ -1,6 +1,7 @@
 package tfar.meandering;
 
 import com.mojang.authlib.GameProfile;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.ai.attributes.AttributeModifierMap;
@@ -15,6 +16,7 @@ import net.minecraft.network.datasync.EntityDataManager;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.HandSide;
 import net.minecraft.util.NonNullList;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -94,7 +96,6 @@ public class IdlePlayer extends LivingEntity {
         }
 
         compound.put("HandItems", listnbt1);
-        ListNBT listnbt2 = new ListNBT();
 
     }
 
@@ -169,6 +170,32 @@ public class IdlePlayer extends LivingEntity {
         dataManager.set(MODEL, model);
     }
 
+    @Override
+    public void livingTick() {
+        super.livingTick();
+
+        AxisAlignedBB axisalignedbb;
+        if (this.isPassenger() && !this.getRidingEntity().removed) {
+            axisalignedbb = this.getBoundingBox().union(this.getRidingEntity().getBoundingBox()).grow(1.0D, 0.0D, 1.0D);
+        } else {
+            axisalignedbb = this.getBoundingBox().grow(1.0D, 0.5D, 1.0D);
+        }
+
+        List<Entity> list = this.world.getEntitiesWithinAABBExcludingEntity(this, axisalignedbb);
+
+        for (Entity entity : list) {
+            if (!entity.removed && !world.isRemote) {//clientside lookup?
+                PlayerEntity player = getPlayer();
+                if (player != null) {
+                    entity.onCollideWithPlayer(player);
+                }
+            }
+        }
+    }
+
+    public PlayerEntity getPlayer() {
+        return getPlayerUUID().map(uuid -> getServer().getPlayerList().getPlayerByUUID(uuid)).orElse(null);
+    }
 
     @Override
     public boolean attackEntityFrom(DamageSource source, float amount) {

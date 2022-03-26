@@ -89,9 +89,10 @@ public class MeanderingClient {
         return pos.squareDistanceTo(center) < 32 * 32;
     }
 
-    public static void handle(boolean meander,UUID uuid) {
+    public static void handle(boolean meander,UUID uuid,Vector3d center) {
         if (Minecraft.getInstance().player.getGameProfile().getId().equals(uuid)) {
             selfMeandering = meander;
+            center = MeanderingClient.center;
         } else {
             if (meander) {
                 otherMeandering.add(uuid);

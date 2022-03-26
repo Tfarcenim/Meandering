@@ -32,7 +32,7 @@ public class S2COtherMeanderingPacket {
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
-        Minecraft.getInstance().enqueue(() -> MeanderingClient.handle(meandering,uuid));
+        Minecraft.getInstance().enqueue(() -> MeanderingClient.handle(meandering,uuid,null));
         ctx.get().setPacketHandled(true);
     }
 }
