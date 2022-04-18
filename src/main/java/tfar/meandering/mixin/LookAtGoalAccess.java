@@ -9,4 +9,8 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface LookAtGoalAccess {
 	@Accessor
 	Class<?> getWatchedClass();
+
+	@Accessor float getMaxDistance();
+
+	@Accessor float getChance();
 }

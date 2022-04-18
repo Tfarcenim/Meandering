@@ -4,13 +4,17 @@
   "compatibilityLevel": "JAVA_8",
   "refmap": "meandering.refmap.json",
   "mixins": [
+    "EntityPredicateAccess",
     "EntityPredicatesAccess",
     "GoalSelectorAccess",
     "LookAtGoalAccess",
     "MobEntityMixin",
     "NearestAttackableTargetGoalAccess",
+    "NearestPlayerSensorMixin",
     "PlayerMixin",
-    "ServerPlayerMixin"
+    "ServerPlayerMixin",
+    "TargetGoalAccess",
+    "TargetGoalMixin"
   ],
   "client": [
     "ClientPlayerMixin"

@@ -185,7 +185,7 @@ public class IdlePlayer extends LivingEntity {
 
         for (Entity entity : list) {
             if (!entity.removed && !world.isRemote) {//clientside lookup?
-                PlayerEntity player = getPlayer();
+                PlayerEntity player = getServerPlayer();
                 if (player != null) {
                     entity.onCollideWithPlayer(player);
                 }
@@ -193,7 +193,7 @@ public class IdlePlayer extends LivingEntity {
         }
     }
 
-    public PlayerEntity getPlayer() {
+    public PlayerEntity getServerPlayer() {
         return getPlayerUUID().map(uuid -> getServer().getPlayerList().getPlayerByUUID(uuid)).orElse(null);
     }
 

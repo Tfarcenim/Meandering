@@ -31,10 +31,7 @@ import net.minecraftforge.registries.DataSerializerEntry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tfar.meandering.client.MeanderingClient;
-import tfar.meandering.mixin.EntityPredicatesAccess;
-import tfar.meandering.mixin.GoalSelectorAccess;
-import tfar.meandering.mixin.LookAtGoalAccess;
-import tfar.meandering.mixin.NearestAttackableTargetGoalAccess;
+import tfar.meandering.mixin.*;
 import tfar.meandering.net.PacketHandler;
 import tfar.meandering.net.S2COtherMeanderingPacket;
 import tfar.meandering.world.MSavedData;
@@ -101,6 +98,7 @@ public class Meandering {
             e.setCanceled(true);
         }
     }
+
 
     private void setup(final FMLCommonSetupEvent event) {
         PacketHandler.registerMessages();
@@ -171,6 +169,9 @@ public class Meandering {
             boolean addTarget = false;
             boolean addLook = false;
 
+            NearestAttackableTargetGoal<?> sAttackableTargetGoal = null;
+            LookAtGoal sLookAtGoal = null;
+
             for (PrioritizedGoal target : targets) {
                 Goal unwrappedGoal = target.getGoal();
                 if (unwrappedGoal instanceof NearestAttackableTargetGoal) {
@@ -178,6 +179,7 @@ public class Meandering {
 
                     Class<?> clasz = ((NearestAttackableTargetGoalAccess) attackableTargetGoal).getTargetClass();
                     if (clasz == PlayerEntity.class) {
+                        sAttackableTargetGoal = attackableTargetGoal;
                         addTarget = true;
                         break;
                     }
@@ -185,17 +187,38 @@ public class Meandering {
             }
 
             if (addTarget) {
-                NearestAttackableTargetGoal<IdlePlayer> newTarget = new NearestAttackableTargetGoal<>(mob, IdlePlayer.class, true);
+                NearestAttackableTargetGoalAccess access = (NearestAttackableTargetGoalAccess)sAttackableTargetGoal;
+
+                Predicate<LivingEntity> currentPredicate = ((EntityPredicateAccess)access.getTargetEntitySelector()).getCustomPredicate();
+
+                Predicate<LivingEntity> newPredicate = null;
+
+                if (currentPredicate != null && mob instanceof IAngerable) {
+                    IAngerable angerable = (IAngerable)mob;
+
+                    newPredicate = livingEntity -> {
+                                PlayerEntity player = ((IdlePlayer) livingEntity).getServerPlayer();
+                                return angerable.func_241357_a_(player.world) ||
+                                        player.getUniqueID().equals(angerable.getAngerTarget());
+                    };
+                }
+
+                NearestAttackableTargetGoal<IdlePlayer> newTarget = new NearestAttackableTargetGoal<>(mob, IdlePlayer.class,
+                        access.getTargetChance(),
+                        access.getShouldCheckSight(),
+                        access.getNearbyOnly(),
+                        newPredicate);
                 mob.targetSelector.addGoal(2, newTarget);
             }
 
             for (PrioritizedGoal goal : goals) {
                 Goal unwrappedGoal = goal.getGoal();
                 if (unwrappedGoal instanceof LookAtGoal) {
-                    LookAtGoal attackableTargetGoal = (LookAtGoal) unwrappedGoal;
+                    LookAtGoal lookAtGoal = (LookAtGoal) unwrappedGoal;
 
-                    Class<?> clasz = ((LookAtGoalAccess) attackableTargetGoal).getWatchedClass();
+                    Class<?> clasz = ((LookAtGoalAccess) lookAtGoal).getWatchedClass();
                     if (clasz == PlayerEntity.class) {
+                        sLookAtGoal = lookAtGoal;
                         addLook = true;
                         break;
                     }
@@ -203,7 +226,9 @@ public class Meandering {
             }
 
             if (addLook) {
-                LookAtGoal newTarget = new LookAtGoal(mob, IdlePlayer.class, 8);
+                LookAtGoal newTarget = new LookAtGoal(mob, IdlePlayer.class,
+                        (((LookAtGoalAccess) sLookAtGoal).getMaxDistance()),
+                        ((LookAtGoalAccess)sLookAtGoal).getChance());
                 mob.goalSelector.addGoal(6, newTarget);
             }
         }
